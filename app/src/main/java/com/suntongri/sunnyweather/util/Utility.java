@@ -23,13 +23,12 @@ public class Utility {
         if (!TextUtils.isEmpty(response)) {
             try {
                 JSONArray allProvinces = new JSONArray(response);
-                for (int i = 0; id < allProvinces.length(); i++) {
+                for (int i = 0; i < allProvinces.length(); i++) {
                     JSONObject provinceObject = allProvinces.getJSONObject(i);
                     Province province = new Province();
                     province.setProvinceName(provinceObject.getString("name"));
                     province.setProvindeCode(provinceObject.getInt("id"));
                     province.save();
-
                 }
                 return true;
             } catch (JSONException e) {

@@ -1,8 +1,10 @@
 package com.suntongri.sunnyweather.fragment;
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +13,7 @@ import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,6 +22,7 @@ import com.suntongri.sunnyweather.db.City;
 import com.suntongri.sunnyweather.db.Country;
 import com.suntongri.sunnyweather.db.Province;
 import com.suntongri.sunnyweather.util.HttpUtil;
+import com.suntongri.sunnyweather.util.Utility;
 
 import org.litepal.crud.DataSupport;
 import org.w3c.dom.Text;
@@ -34,6 +38,7 @@ import okhttp3.Response;
 
 import static android.icu.lang.UCharacter.GraphemeClusterBreak.T;
 import static android.media.CamcorderProfile.get;
+import static com.suntongri.sunnyweather.util.Utility.handleProvinceResponse;
 import static org.litepal.crud.DataSupport.findAll;
 import static org.litepal.crud.DataSupport.where;
 
@@ -59,6 +64,8 @@ public class ChooseAreaFragment extends Fragment {
     private Province selectProvince;
     private City selectCity;
     private ArrayAdapter<String> adapter;
+
+    private ProgressDialog dialog;
 
 
     @Nullable
@@ -117,7 +124,7 @@ public class ChooseAreaFragment extends Fragment {
             listView.setSelection(0);
             currentLevel = LEVEL_PROVINCE;
         }else {
-            String address = "http://guolin.tech/api/china";
+            String address = "http://www.guolin.tech/api/china";
             queryFromServer(address,"province");
         }
     }
@@ -156,12 +163,12 @@ public class ChooseAreaFragment extends Fragment {
         }else{
             int provinceCode = selectProvince.getProvindeCode();
             int cityCode = selectCity.getCityCode();
-            String address = "http://guolin.tech/api/china/"+provinceCode + cityCode;
+            String address = "http://guolin.tech/api/china/"+provinceCode+ "/"+ cityCode;
             queryFromServer(address,"country");
         }
     }
 
-    private void queryFromServer(String address, String type) {
+    private void queryFromServer(String address, final String type) {
         showProgressDialog();
         HttpUtil.sendOkHttpRequest(address, new Callback() {
             @Override
@@ -172,24 +179,61 @@ public class ChooseAreaFragment extends Fragment {
                         closeProgressBar();
                         Toast.makeText(getActivity(),"加载失败！",Toast.LENGTH_SHORT).show();
                     }
-
-
                 });
-
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-
+                String responseText = response.body().string();//
+                boolean result = false;
+                if("province".equals(type)){
+                    result = Utility.handleProvinceResponse(responseText);
+                }else if("city".equals(type)){
+                    int id  = selectProvince.getId();
+                    result = Utility.handleCityResponse(responseText,id);
+                }else if("country".equals(type)){
+                    int id = selectCity.getId();
+                    result = Utility.handleCountryResponse(responseText,id);
+                }
+                if(result){
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            closeProgressBar();
+                            if("province".equals(type)){
+                                queryProvinces();
+                            }else if("city".equals(type)){
+                                queryCities();
+                            }else if("country".equals(type)){
+                                queryCountries();
+                            }
+                        }
+                    });
+                }
             }
         });
-
-
     }
 
     private void showProgressDialog() {
+        if(dialog == null){
+            dialog = new ProgressDialog(getActivity());
+            dialog.setMessage("正在加载");
+            dialog.setCanceledOnTouchOutside(false);
+        }
+        dialog.show();
     }
 
     private void closeProgressBar() {
+        if (dialog!=null){
+            dialog.dismiss();
+        }
+    }
+
+    public void backPressed(){
+        if(currentLevel == LEVEL_COUNTRY){
+            queryCities();
+        }else if(currentLevel == LEVEL_CITY){
+            queryProvinces();
+        }
     }
 }
