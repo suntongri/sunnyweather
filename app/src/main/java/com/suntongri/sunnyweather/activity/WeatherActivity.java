@@ -10,11 +10,13 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.suntongri.sunnyweather.R;
 import com.suntongri.sunnyweather.gson.Forecast;
 import com.suntongri.sunnyweather.gson.Weather;
@@ -47,6 +49,8 @@ public class WeatherActivity extends AppCompatActivity {
     public DrawerLayout drawerLayout;
     private Button navButton;
     private SharedPreferences preferences;
+    private ImageView bingPicImg;
+    private SharedPreferences sPre;
 
 
     @Override
@@ -70,6 +74,7 @@ public class WeatherActivity extends AppCompatActivity {
         refreshLayout.setColorSchemeResources(R.color.colorAccent);
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         navButton = (Button) findViewById(R.id.nav_button);
+        bingPicImg = (ImageView) findViewById(R.id.bing_pic_img);
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String weatherString = prefs.getString("weather",null);
@@ -101,6 +106,40 @@ public class WeatherActivity extends AppCompatActivity {
                 drawerLayout.openDrawer(GravityCompat.START);
             }
         });
+
+        sPre = getSharedPreferences("config",MODE_PRIVATE);
+        String bingPic = sPre.getString("bing_pic",null);
+        if(bingPic!=null){
+            Glide.with(this).load(bingPic).into(bingPicImg);
+        }else {
+            loadBingPic();
+        }
+    }
+
+    private void loadBingPic() {
+        String requestBingPic = "http://guolin.tech/api/bing_pic";
+        HttpUtil.sendOkHttpRequest(requestBingPic, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                final String bingPic = response.body().string();
+                sPre.edit().putString("bing_pic",bingPic).commit();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Glide.with(WeatherActivity.this).load(bingPic).into(bingPicImg);
+                    }
+                });
+
+            }
+        });
+
+
+
     }
 
 
@@ -138,6 +177,7 @@ public class WeatherActivity extends AppCompatActivity {
                 });
             }
         });
+        loadBingPic();
     }
 
     private void showWeatherInfo(Weather weather) {

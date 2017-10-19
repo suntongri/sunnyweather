@@ -4,8 +4,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/background1"
     tools:context="com.suntongri.sunnyweather.activity.WeatherActivity">
+    <ImageView
+        android:id="@+id/bing_pic_img"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        />
 
     <android.support.v4.widget.DrawerLayout
         android:id="@+id/drawer_layout"
@@ -16,6 +21,8 @@
             android:id="@+id/swipe_refresh"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
+
+
 
             <ScrollView
                 android:id="@+id/weather_layout"
