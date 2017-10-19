@@ -2,9 +2,11 @@ package com.suntongri.sunnyweather.util;
 
 import android.text.TextUtils;
 
+import com.google.gson.Gson;
 import com.suntongri.sunnyweather.db.City;
 import com.suntongri.sunnyweather.db.Country;
 import com.suntongri.sunnyweather.db.Province;
+import com.suntongri.sunnyweather.gson.Weather;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -77,5 +79,18 @@ public class Utility {
             }
         }
         return false;
+    }
+
+
+    public static Weather handleWeatherResponse(String response){
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+            JSONArray jsonArray = jsonObject.getJSONArray("HeWeather5");
+            String weatherContent = jsonArray.getJSONObject(0).toString();
+            return new Gson().fromJson(weatherContent,Weather.class);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

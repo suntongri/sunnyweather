@@ -1,6 +1,9 @@
 package com.suntongri.sunnyweather.fragment;
 
 import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -18,6 +21,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.suntongri.sunnyweather.R;
+import com.suntongri.sunnyweather.activity.MainActivity;
+import com.suntongri.sunnyweather.activity.WeatherActivity;
 import com.suntongri.sunnyweather.db.City;
 import com.suntongri.sunnyweather.db.Country;
 import com.suntongri.sunnyweather.db.Province;
@@ -66,6 +71,8 @@ public class ChooseAreaFragment extends Fragment {
     private ArrayAdapter<String> adapter;
 
     private ProgressDialog dialog;
+    private String weatherId;
+    private SharedPreferences preferences;
 
 
     @Nullable
@@ -86,6 +93,7 @@ public class ChooseAreaFragment extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if(currentLevel == LEVEL_PROVINCE){
@@ -94,6 +102,22 @@ public class ChooseAreaFragment extends Fragment {
                 }else if(currentLevel == LEVEL_CITY){
                     selectCity = cityList.get(position);
                     queryCountries();
+                }else if(currentLevel == LEVEL_COUNTRY){
+                    if(getActivity() instanceof MainActivity){
+                        weatherId = countryList.get(position).getWeatherId();
+                        Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                        intent.putExtra("weather_id", weatherId);
+                        startActivity(intent);
+                        getActivity().finish();
+                    }else if(getActivity() instanceof WeatherActivity){
+                        WeatherActivity activity = (WeatherActivity) getActivity();
+                        activity.drawerLayout.closeDrawers();
+                        activity.refreshLayout.setRefreshing(true);
+                        weatherId = countryList.get(position).getWeatherId();
+                        preferences = getActivity().getSharedPreferences("config", Context.MODE_PRIVATE);
+                        preferences.edit().putString("weather_id",weatherId).commit();
+                        activity.requestWeather(weatherId);
+                    }
                 }
             }
         });
